@@ -4,21 +4,13 @@
 #include <PWM.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
-#define ThermistorHotPIN 0                             // Analog Pin 0
-#define ThermistorColdPIN 1                  // Analog Pin 1
+const byte pumpPWM = 7;					// pump control connected to digital pin 3
+const byte radFanPWM = 8;				// radiator fans connected to digital pin 5
+const byte exhFanPWM = 9;				// large fan connected to digital pin 6
 
-float ardVolt = 5.05;                       // Arduino Output Voltage 5V measured
-                                        
-float pulldownRes = 9990;                   // 10k Pulldown Resistor
-                                        
-float thermistorRes = 10000;                // thermistor nominal resistance
-
-const byte pumpPWM = 7;			    // pump control connected to digital pin 3
-const byte radFanPWM = 8;		    // radiator fans connected to digital pin 5
-const byte exhFanPWM = 9;		    // large fan connected to digital pin 6
-
+const byte tempSensorHot = A0;			// temperature sensor hot analog pin
+const byte tempSensorCold = A1;			// temperature sensor cold analog pin
 
 const byte flowSensorHot = 2;			// flow sensor hot analog pin
 const byte flowSensorCold = 3;			// flow sensor cold analog pin
@@ -31,7 +23,6 @@ int dutyCycleStart = 75;              // startup duty cycle (0-255)
 int dutyCycleExhFan = 50;		
 int dutyCycleRadFan = 50;
 int dutyCyclePump = 50;
-
 
 // int fanRPM;								// variable to output fan RPM
 int rpmCounter;						// counter for number of interrupts (hall effect) per second
@@ -55,8 +46,8 @@ void setup() {
         attachInterrupt(flowSensorCold, rpm, RISING);
         
         // Temperature Sensor Setup
-        pinMode(ThermistorHotPIN, INPUT);
-        pinMode(ThermistorColdPIN, INPUT);
+        pinMode(tempSensorHot, INPUT);
+        pinMode(tempSensorCold, INPUT);
         
         // Pump Setup
 	SetPinFrequencySafe(pumpPWM, pwmFrequency);
@@ -73,7 +64,6 @@ void setup() {
 	pinMode(radFanPWM, OUTPUT);
 	pwmWrite(radFanPWM,dutyCycleStart);
         delay(5000);
-        
 }
 
 // Interrupt to count the fan RPM
@@ -94,19 +84,6 @@ void loop() {
     // delay(10);
     
     delay(1000);
-    
-    float tempCold;
-    float tempHot; 
-    tempCold = ThermistorCold(analogRead(ThermistorColdPIN));   // read ADC and  convert it to Celsius
-    Serial.print("Temperature Out Cool (Celsius): ");
-    Serial.print(tempCold,1);                                   // display Celsius
-    Serial.println("");                                  
-    
-    tempHot = ThermistorHot(analogRead(ThermistorHotPIN));      // read ADC and  convert it to Celsius
-    Serial.print("Temperature In Hot (Celsius): ");
-    Serial.print(tempHot,1);                                    // display Celsius
-    Serial.println("");                                  
-    delay(5000);                                                // Delay readings
     
 }
 
@@ -138,23 +115,11 @@ int flowMeterCold(int rpmCounter) {
 
 }
 
-float ThermistorHot(int RawADC) {
-  long ResistanceCold;  
-  float TempCold;                                  // Dual-Purpose variable to save space.
-  // Thermistor Section
-  ResistanceCold = pulldownRes * ((1024.0 / RawADC) - 1);
-  TempCold = log(ResistanceCold);                 // Saving the Log(resistance) so not to calculate  it 4 times later
-  TempCold = 1 / (0.001129148 + (0.000234125 * TempCold) + (0.0000000876741 * TempCold * TempCold * TempCold));
-  TempCold = TempCold - 273.15;                   // Convert Kelvin to Celsius
-  return TempCold;
-}
-float ThermistorCold(int RawADC) {
-  long ResistanceCold;  
-  float TempCold;                                  // Dual-Purpose variable to save space.
-  // Thermistor Section
-  ResistanceCold = pulldownRes * ((1024.0 / RawADC) - 1);
-  TempCold = log(ResistanceCold);                 // Saving the Log(resistance) so not to calculate  it 4 times later
-  TempCold = 1 / (0.001129148 + (0.000234125 * TempCold) + (0.0000000876741 * TempCold * TempCold * TempCold));
-  TempCold = TempCold - 273.15;                   // Convert Kelvin to Celsius
-  return TempCold;
+
+int tempSense(int THot, int TCold) {
+
+	TCold = analogRead(tempSensorCold);
+	THot = analogRead(tempSensorHot);
+	int deltaT = THot - TCold;
+
 }
