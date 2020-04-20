@@ -12,7 +12,9 @@
 float ardVolt = 5.05;                       // Arduino Output Voltage 5V measured
                                         
 float pulldownRes = 9990;                   // 10k Pulldown Resistor
-                                        
+float tempHot;                              // variable for temperature of hot side thermistor
+float tempCold;                             // variable for temperature of cold side thermistor
+float prevTempDelta;                        // storing last temperature difference
 float thermistorRes = 10000;                // thermistor nominal resistance
 
 const byte pumpPWM = 7;			    // pump control connected to digital pin 3
@@ -25,12 +27,13 @@ const byte flowSensorCold = 3;			// flow sensor cold analog pin
 
 const byte pumpRPMPin = 19;				// pump RPM reading
 const byte radFanRPMPin = 20;				// fan RPM readings
-const byte exhFanRPMPin = 21;
+// const byte exhFanRPMPin = 21;       // exh Fan RPM readings (not used currently)
 
-int dutyCycleStart = 75;              // startup duty cycle (0-255)
-int dutyCycleExhFan = 50;		
-int dutyCycleRadFan = 50;
-int dutyCyclePump = 50;
+int dutyCycleStart = 60;              // startup duty cycle (0-255) slow start
+float dutyCycleInc = 25.5;            // 10% increments for duty cycle
+int dutyCycleExhFan;		
+int dutyCycleRadFan;
+int dutyCyclePump;
 
 
 // int fanRPM;								// variable to output fan RPM
@@ -69,10 +72,10 @@ void setup() {
 	pwmWrite(exhFanPWM, dutyCycleStart);
 
 	// 120mm Radiator Fans Setup
-  	SetPinFrequencySafe(radFanPWM,pwmFrequency);
+  SetPinFrequencySafe(radFanPWM,pwmFrequency);
 	pinMode(radFanPWM, OUTPUT);
 	pwmWrite(radFanPWM,dutyCycleStart);
-        delay(5000);
+  delay(5000);
         
 }
 
@@ -83,20 +86,6 @@ void setup() {
 
 void loop() {
   
-    // Control for PWM
-    pwmWrite(radFanPWM,dutyCycleRadFan);
-    // fanRPMOutput(rotationCount);
-
-    pwmWrite(pumpPWM,dutyCyclePump);
-    // pumpRPMoutput(rotationCount);
-    
-    pwmWrite(exhFanPWM,dutyCycleExhFan);
-    // delay(10);
-    
-    delay(1000);
-    
-    float tempCold;
-    float tempHot; 
     tempCold = ThermistorCold(analogRead(ThermistorColdPIN));   // read ADC and  convert it to Celsius
     Serial.print("Temperature Out Cool (Celsius): ");
     Serial.print(tempCold,1);                                   // display Celsius
@@ -107,6 +96,37 @@ void loop() {
     Serial.print(tempHot,1);                                    // display Celsius
     Serial.println("");                                  
     delay(5000);                                                // Delay readings
+
+    float tempDelta = tempHot - tempCold;                       // measure temperature difference
+    float tempChange = tempDelta - prevTempDelta;               // measure change of temperature difference from last iteration
+    
+    if (tempChange > 0) {                                       // if temperature change increased, increase duty cycle
+      dutyCycleRadFan = dutyCycleRadFan + dutyCycleInc;
+      dutyCyclePump =  dutyCyclePump + dutyCycleInc;
+      dutyCycleExhFan = dutyCycleExhFan + dutyCycleInc;
+    }
+    else if (tempChange < 0) {                                  // if temperature change decreased, decrease duty cycle
+      dutyCycleRadFan = dutyCycleRadFan - dutyCycleInc;
+      dutyCyclePump = dutyCyclePump - dutyCycleInc;
+      dutyCycleExhFan = dutyCycleExhFan - dutyCycleInc;
+    }
+    else {
+      delay(1000);                                              // if no change, delay
+    }
+
+    // Control for PWM
+    pwmWrite(radFanPWM,dutyCycleRadFan);
+    // fanRPMOutput(rpmCounter);
+
+    pwmWrite(pumpPWM,dutyCyclePump);
+    // flowMeterCold(rpmCounter);
+    
+    pwmWrite(exhFanPWM,dutyCycleExhFan);
+    // delay(10);
+    
+    delay(1000);
+
+    prevTempDelta = tempDelta;
     
 }
 

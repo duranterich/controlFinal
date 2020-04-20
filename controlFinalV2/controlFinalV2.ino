@@ -20,18 +20,18 @@ const byte pumpRPMPin = 7;				// pump RPM reading
 const byte meterPin1R = 2;
 const byte meterPin1L = 2;
 
-int dutyCycleStart = 75;              // startup duty cycle (0-255)
-int dutyCycleExhFan = 50;		
+int dutyCycleStart = 75;				// startup duty cycle (0-255)
+int dutyCycleExhFan = 50;				// steady state duty cycle for fan/pump set
 int dutyCycleRadFan = 140;
 int dutyCyclePump = 150;
 
 int analogOneVal;
 int analogTwoVal;
 
-// int fanRPM;								// variable to output fan RPM
-int rpmCounter;						// counter for number of interrupts (hall effect) per second
+// int fanRPM;							// variable to output fan RPM
+int rpmCounter;							// counter for number of interrupts (hall effect) per second
 
-int32_t pwmFrequency = 24000;                                  // set PWM frequency for system to 27.5kHz
+int32_t pwmFrequency = 24000;			// set PWM frequency for system to 24.0kHz
 
 void setup() {
 	InitTimersSafe();					// initialize all timers except for 0, to save time keeping functions
@@ -46,7 +46,7 @@ void setup() {
         pinMode(meterPin1R, INPUT);
         attachInterrupt(meterPin1R, rpm, RISING);
         
-        // Pump Setup
+    // Pump Setup
 	SetPinFrequencySafe(pumpPWM, pwmFrequency);
 	pinMode(pumpPWM, OUTPUT);
 	pwmWrite(pumpPWM, dutyCycleStart);
