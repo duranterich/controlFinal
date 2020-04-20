@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define ThermistorPINCold 0                             // Analog Pin 0
-#define ThermistorPINHot 1                  // Analog Pin 1
+#define ThermistorHotPIN 0                             // Analog Pin 0
+#define ThermistorColdPIN 1                  // Analog Pin 1
 
 float ardVolt = 5.05;                       // Arduino Output Voltage 5V measured
                                         
@@ -58,8 +58,8 @@ void setup() {
         attachInterrupt(flowSensorCold, rpm, RISING);
         
         // Temperature Sensor Setup
-        pinMode(tempSensorHot, INPUT);
-        pinMode(tempSensorCold, INPUT);
+        pinMode(ThermistorHotPIN, INPUT);
+        pinMode(ThermistorColdPIN, INPUT);
         
         // Pump Setup
 	SetPinFrequencySafe(pumpPWM, pwmFrequency);
@@ -162,7 +162,7 @@ float ThermistorHot(int RawADC) {
   long ResistanceCold;  
   float TempCold;                                  // Dual-Purpose variable to save space.
   // Thermistor Section
-  ResistanceCold = pullupRes * ((1024.0 / RawADC) - 1);
+  ResistanceCold = pulldownRes * ((1024.0 / RawADC) - 1);
   TempCold = log(ResistanceCold);                 // Saving the Log(resistance) so not to calculate  it 4 times later
   TempCold = 1 / (0.001129148 + (0.000234125 * TempCold) + (0.0000000876741 * TempCold * TempCold * TempCold));
   TempCold = TempCold - 273.15;                   // Convert Kelvin to Celsius
@@ -172,7 +172,7 @@ float ThermistorCold(int RawADC) {
   long ResistanceCold;  
   float TempCold;                                  // Dual-Purpose variable to save space.
   // Thermistor Section
-  ResistanceCold = pullupRes * ((1024.0 / RawADC) - 1);
+  ResistanceCold = pulldownRes * ((1024.0 / RawADC) - 1);
   TempCold = log(ResistanceCold);                 // Saving the Log(resistance) so not to calculate  it 4 times later
   TempCold = 1 / (0.001129148 + (0.000234125 * TempCold) + (0.0000000876741 * TempCold * TempCold * TempCold));
   TempCold = TempCold - 273.15;                   // Convert Kelvin to Celsius
